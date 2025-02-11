@@ -608,7 +608,8 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
 
       // Get the pre-signed URL from the backend
       final response = await http.post(
-        Uri.parse('http://192.168.50.55:8080/save-attendance-images'),
+        Uri.parse(
+            'https://rc-ugc-attendance-backend.onrender.com/save-attendance-images'),
         body: jsonEncode({
           'fileName': fileName, // Pass the modified file name
         }),
@@ -739,7 +740,8 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
       File compressedImage = await _compressImage(_timeOutSelfie!);
 
       final response = await http.post(
-        Uri.parse('http://192.168.50.55:8080/save-attendance-images'),
+        Uri.parse(
+            'https://rc-ugc-attendance-backend.onrender.com/save-attendance-images'),
         body: jsonEncode({'fileName': fileName}),
         headers: {'Content-Type': 'application/json'},
       );
