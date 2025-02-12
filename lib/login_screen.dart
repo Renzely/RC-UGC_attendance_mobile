@@ -84,15 +84,18 @@ class _LoginPageState extends State<LoginPage> {
             MaterialPageRoute(
               builder: (context) => SideBarLayout(
                 title: "Attendance",
-                mainContent: Column(
-                  children: <Widget>[
-                    DateTimeWidget(),
-                    AttendanceWidget(
-                      userEmail: userDetails['emailAddress'] ?? '',
-                      userFirstName: userDetails['firstName'] ?? '',
-                      userLastName: userDetails['lastName'] ?? '',
-                    ),
-                  ],
+                mainContent: SingleChildScrollView(
+                  // physics: BouncingScrollPhysics(), // Smooth scrolling effect
+                  child: Column(
+                    children: <Widget>[
+                      DateTimeWidget(),
+                      AttendanceWidget(
+                        userEmail: userDetails['emailAddress'] ?? '',
+                        userFirstName: userDetails['firstName'] ?? '',
+                        userLastName: userDetails['lastName'] ?? '',
+                      ),
+                    ],
+                  ),
                 ),
                 userName: userDetails['firstName'] ?? '',
                 userLastName: userDetails['lastName'] ?? '',

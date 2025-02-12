@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 
 class AttendanceModel extends ChangeNotifier {
   Map<String, String> _selfieUrls =
@@ -56,15 +57,34 @@ class AttendanceModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Update the Time In value
   void updateTimeIn(String? timeIn) {
-    _timeIn = timeIn;
+    if (timeIn != null) {
+      try {
+        // Parse input time and reformat to ensure consistency
+        DateTime dateTime = DateTime.parse(timeIn);
+        _timeIn = DateFormat("yyyy-MM-dd HH:mm:ss").format(dateTime);
+      } catch (e) {
+        print("Error parsing timeIn: $e");
+        _timeIn = timeIn; // Keep original value if parsing fails
+      }
+    } else {
+      _timeIn = null;
+    }
     notifyListeners();
   }
 
-  // Update the Time Out value
   void updateTimeOut(String? timeOut) {
-    _timeOut = timeOut;
+    if (timeOut != null) {
+      try {
+        DateTime dateTime = DateTime.parse(timeOut);
+        _timeOut = DateFormat("yyyy-MM-dd HH:mm:ss").format(dateTime);
+      } catch (e) {
+        print("Error parsing timeOut: $e");
+        _timeOut = timeOut;
+      }
+    } else {
+      _timeOut = null;
+    }
     notifyListeners();
   }
 
