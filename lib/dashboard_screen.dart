@@ -467,17 +467,10 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
     return {};
   }
 
-  String? _formatTime(String? time) {
-    if (time == null) return 'Not recorded';
-    try {
-      // Try parsing the time using DateTime.tryParse() for safer error handling
-      DateTime dateTime = DateTime.tryParse(time) ??
-          DateTime.now(); // Default to current time if parsing fails
-      return DateFormat('h:mm a').format(dateTime);
-    } catch (e) {
-      print('Error formatting time: $e');
-      return 'Not recorded';
-    }
+  String _formatTime(String? time) {
+    if (time == null || time.isEmpty) return "No record";
+    DateTime parsedTime = DateFormat("dd-MM-yyyy HH:mm").parse(time);
+    return DateFormat("hh:mm a").format(parsedTime); // Converts to AM/PM format
   }
 
   Future<Position?> _getCurrentLocation() async {
@@ -572,8 +565,8 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
 
     Position? position = await _getCurrentLocation();
     String location = 'No location';
-    double? latitude;
-    double? longitude;
+    double latitude = 0.0;
+    double longitude = 0.0;
 
     if (position != null) {
       location = await _getAddressFromLatLong(position);
@@ -585,10 +578,11 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
       });
     }
 
-    // Step 1: Capture and upload selfie
+    // ✅ Ensure a selfie is taken before proceeding
     if (_selfie == null) {
       await _pickSelfie();
     }
+
     if (_selfie == null) {
       _showSnackbar(context, 'Selfie is required to record Time In');
       return;
@@ -596,33 +590,30 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
 
     String selfieUrl = '';
     try {
-      // Format the date as YYYY-MM-DD
+      // ✅ Format date and generate a unique filename
       String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
-
-      // Generate the file name with a "timein" indication
       String fileName =
-          '${widget.userFirstName}_${widget.userLastName}_timein_$formattedDate.jpg';
+          '${widget.userFirstName}_${widget.userLastName}_${_selectedAccount}_timein_$formattedDate.jpg';
 
-      // Compress and resize the image (optional step to reduce file size)
+      // ✅ Compress and optimize the image before upload
       File compressedImage = await _compressImage(_selfie!);
 
-      // Get the pre-signed URL from the backend
+      // ✅ Request a pre-signed URL from the backend
       final response = await http.post(
         Uri.parse(
             'https://rc-ugc-attendance-backend.onrender.com/save-attendance-images'),
-        body: jsonEncode({
-          'fileName': fileName, // Pass the modified file name
-        }),
+        body: jsonEncode({'fileName': fileName}),
         headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to generate pre-signed URL');
+        throw Exception(
+            'Failed to get pre-signed URL. Server error: ${response.body}');
       }
 
       final uploadUrl = jsonDecode(response.body)['url'];
 
-      // Step 2: Upload selfie to S3
+      // ✅ Upload the selfie to S3
       final uploadResponse = await http.put(
         Uri.parse(uploadUrl),
         body: compressedImage.readAsBytesSync(),
@@ -631,38 +622,42 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
 
       if (uploadResponse.statusCode != 200) {
         throw Exception(
-            'Failed to upload selfie. Status Code: ${uploadResponse.statusCode}');
+            'Failed to upload selfie. Status: ${uploadResponse.statusCode}');
       }
 
-      // Extract the uploaded image URL (this URL doesn't include the query params)
-      selfieUrl = uploadUrl.split('?').first;
+      selfieUrl =
+          uploadUrl.split('?').first; // Extract URL without query params
     } catch (e) {
       _showSnackbar(context, 'Error uploading selfie: $e');
       return;
     }
 
-    // Step 2: Save data to SharedPreferences
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('timeInLocation', location);
-    await prefs.setDouble('timeInLatitude', latitude ?? 0.0);
-    await prefs.setDouble('timeInLongitude', longitude ?? 0.0);
-    await prefs.setString('timeIn', currentTimeIn); // Save Time In
-    await prefs.setBool('isTimeInRecorded_${_selectedAccount}', true);
-    await prefs.setString('selfieUrl_${_selectedAccount}', selfieUrl);
+    // ✅ Save data locally (SharedPreferences)
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('timeInLocation', location);
+      await prefs.setDouble('timeInLatitude', latitude);
+      await prefs.setDouble('timeInLongitude', longitude);
+      await prefs.setString('timeIn', currentTimeIn);
+      await prefs.setBool('isTimeInRecorded_${_selectedAccount}', true);
+      await prefs.setString('selfieUrl_${_selectedAccount}', selfieUrl);
+    } catch (e) {
+      print('Error saving Time In to SharedPreferences: $e');
+    }
 
-    // Step 3: Save Time In to the database
+    // ✅ Save Time In data to the database
     try {
       var result = await MongoDatabase.logTimeIn(
         widget.userEmail,
         location,
         _selectedAccount ?? '',
-        latitude ?? 0.0, // Default to 0.0 if position is null
-        longitude ?? 0.0, // Default to 0.0 if position is null
-        selfieUrl, // Pass the selfie URL
+        latitude,
+        longitude,
+        selfieUrl,
       );
 
       if (result == "Success") {
-        // Update the attendance model and UI state after successful Time In
+        // ✅ Update the attendance model
         attendanceModel.updateTimeIn(currentTimeIn);
         attendanceModel.setIsTimeInRecorded(true);
         attendanceModel.setSelfieUrlForBranch(_selectedAccount!, selfieUrl);
@@ -672,7 +667,7 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
         _showSnackbar(context, 'Failed to record Time In');
       }
     } catch (e) {
-      _showSnackbar(context, 'Error recording Time In');
+      _showSnackbar(context, 'Error recording Time In: $e');
     }
   }
 
@@ -735,7 +730,7 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
 
       // Generate the file name with a "timeout" indication
       String fileName =
-          '${widget.userFirstName}_${widget.userLastName}_timeout_$formattedDate.jpg';
+          '${widget.userFirstName}_${widget.userLastName}_${_selectedAccount}_timeout_$formattedDate.jpg';
 
       File compressedImage = await _compressImage(_timeOutSelfie!);
 
@@ -828,10 +823,13 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
     }
 
     final selfieUrl = attendanceModel.getSelfieUrlForBranch(_selectedAccount!);
-    final timeIn = attendanceModel.timeIn;
+    final timeIn = attendanceModel
+        .timeIn; // ✅ Use stored time instead of generating new one
     final location = timeInLocation; // Assuming this holds the location value
 
     print("Retrieved selfie URL for branch $_selectedAccount: $selfieUrl");
+    print(
+        "Stored Time In: $timeIn"); // ✅ Debug to check if the time is stored correctly
 
     showDialog(
       context: context,
@@ -846,8 +844,7 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
               ),
               SizedBox(height: 15),
               selfieUrl != null
-                  ? (selfieUrl.startsWith(
-                          '/data/user/') // Check if it's a local file path
+                  ? (selfieUrl.startsWith('/data/user/')
                       ? Image.file(
                           File(selfieUrl),
                           fit: BoxFit.cover,
@@ -855,7 +852,7 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
                           height: 200,
                         )
                       : Image.network(
-                          selfieUrl, // Handle network URL if needed
+                          selfieUrl,
                           fit: BoxFit.cover,
                           width: 200,
                           height: 200,
@@ -863,9 +860,9 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
                   : const Text("No photo available."),
               SizedBox(height: 15),
 
-              // ✅ Time In and Location Below the Picture
+              // ✅ Display the correct stored time
               Text(
-                "Time In: ${_formatTime(attendanceModel.timeIn)}",
+                "Time In: ${_formatTime(timeIn)}", // ✅ Now it correctly formats the stored time
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
 
@@ -898,11 +895,12 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
 
     final timeOutSelfieUrl =
         attendanceModel.getTimeOutSelfieUrlForBranch(_selectedAccount!);
-    final timeOut = attendanceModel.timeOut;
-    final timeOutlocation = timeOutLocation;
+    final timeOut = attendanceModel.timeOut; // ✅ Use stored Time Out
+    final timeOutlocation = timeOutLocation; // ✅ Corrected
 
     print(
         "Retrieved Time Out selfie URL for branch $_selectedAccount: $timeOutSelfieUrl");
+    print("Stored Time Out: $timeOut"); // ✅ Debugging to verify stored time
 
     showDialog(
       context: context,
@@ -917,8 +915,7 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
               ),
               SizedBox(height: 15),
               timeOutSelfieUrl != null
-                  ? (timeOutSelfieUrl.startsWith(
-                          '/data/user/') // Check if it's a local file path
+                  ? (timeOutSelfieUrl.startsWith('/data/user/')
                       ? Image.file(
                           File(timeOutSelfieUrl), // Local file path image
                           fit: BoxFit.cover,
@@ -935,10 +932,13 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
                           : const Text("Invalid URL"))
                   : const Text("No photo available."),
               SizedBox(height: 10),
+
+              // ✅ Display the correct stored time
               Text(
-                "Time Out: ${_formatTime(attendanceModel.timeOut)}",
+                "Time Out: ${_formatTime(timeOut)}", // ✅ Uses the recorded time
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
               ),
+
               Text(
                 "Location: $timeOutlocation",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
@@ -962,350 +962,364 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
       onWillPop: () async => false,
       child: Consumer<AttendanceModel>(
         builder: (context, attendanceModel, child) {
-          return Container(
-            padding: EdgeInsets.symmetric(vertical: 5),
-            child: Column(
-              children: [
-                DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  value: _selectedAccount,
-                  items: _branchList.map((branch) {
-                    return DropdownMenuItem<String>(
-                      value: branch,
-                      child: Container(
-                        padding: const EdgeInsets.all(1),
-                        child: Row(
-                          children: [
-                            Icon(Icons.storefront_outlined,
-                                color: Colors.blue[900]!),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                branch,
-                                style: TextStyle(color: Colors.black),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
+          return SingleChildScrollView(
+            physics: BouncingScrollPhysics(), // Add scroll physics explicitly
+            // child: ConstrainedBox(
+            //   constraints: BoxConstraints(
+            //     minHeight:
+            //         MediaQuery.of(context).size.height, // Prevents collapsing
+            //   ),
+            child: Container(
+              padding: EdgeInsets.symmetric(vertical: 5),
+              child: Column(
+                children: [
+                  DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    value: _selectedAccount,
+                    items: _branchList.map((branch) {
+                      return DropdownMenuItem<String>(
+                        value: branch,
+                        child: Container(
+                          padding: const EdgeInsets.all(1),
+                          child: Row(
+                            children: [
+                              Icon(Icons.storefront_outlined,
+                                  color: Colors.blue[900]!),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  branch,
+                                  style: TextStyle(color: Colors.black),
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                      );
+                    }).toList(),
+                    onChanged: attendanceModel.isTimeInRecorded &&
+                            !attendanceModel.isTimeOutRecorded
+                        ? null // Disable if user is clocked in
+                        : (value) => _onBranchChanged(value!),
+                    decoration: InputDecoration(
+                      hintText: 'Select Branch',
+                      hintStyle: TextStyle(color: Colors.grey),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(5),
+                        borderSide: BorderSide(color: Colors.blue[900]!),
                       ),
-                    );
-                  }).toList(),
-                  onChanged: attendanceModel.isTimeInRecorded &&
-                          !attendanceModel.isTimeOutRecorded
-                      ? null // Disable if user is clocked in
-                      : (value) => _onBranchChanged(value!),
-                  decoration: InputDecoration(
-                    hintText: 'Select Branch',
-                    hintStyle: TextStyle(color: Colors.grey),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(5),
-                      borderSide: BorderSide(color: Colors.blue[900]!),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(5),
+                        borderSide:
+                            BorderSide(color: Colors.blue[900]!, width: 2),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12),
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(5),
-                      borderSide:
-                          BorderSide(color: Colors.blue[900]!, width: 2),
-                    ),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please select a branch';
+                      }
+                      return null;
+                    },
+                    disabledHint: Text(_selectedAccount ?? 'Select Branch',
+                        style: TextStyle(color: Colors.grey)),
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please select a branch';
-                    }
-                    return null;
-                  },
-                  disabledHint: Text(_selectedAccount ?? 'Select Branch',
-                      style: TextStyle(color: Colors.grey)),
-                ),
-                SizedBox(height: 20),
+                  SizedBox(height: 20),
 
-                // Time In Container
-                Container(
-                  padding: EdgeInsets.all(15),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(35),
-                      topRight: Radius.circular(35),
-                      bottomLeft: Radius.circular(25),
-                      bottomRight: Radius.circular(25),
+                  // Time In Container
+                  Container(
+                    padding: EdgeInsets.all(15),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(35),
+                        topRight: Radius.circular(35),
+                        bottomLeft: Radius.circular(25),
+                        bottomRight: Radius.circular(25),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue[900]!.withOpacity(0.8),
+                          blurRadius: 20,
+                          offset: Offset(0, 10),
+                        ),
+                      ],
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.blue[900]!.withOpacity(0.8),
-                        blurRadius: 20,
-                        offset: Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        "TIME IN",
-                        style: TextStyle(
-                            fontSize: 30, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 15),
-                      ElevatedButton(
-                        onPressed: !attendanceModel.isTimeInRecorded &&
-                                !_isTimeInLoading
-                            ? () async {
-                                setState(() {
-                                  _isTimeInLoading =
-                                      true; // Show loading spinner
-                                });
+                    child: Column(
+                      children: [
+                        Text(
+                          "TIME IN",
+                          style: TextStyle(
+                              fontSize: 30, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 15),
+                        ElevatedButton(
+                          onPressed: !attendanceModel.isTimeInRecorded &&
+                                  !_isTimeInLoading
+                              ? () async {
+                                  setState(() {
+                                    _isTimeInLoading =
+                                        true; // Show loading spinner
+                                  });
 
-                                // Step 1: Capture a selfie
-                                await _pickSelfie();
+                                  // Step 1: Capture a selfie
+                                  await _pickSelfie();
+                                  if (_selfie == null) {
+                                    _showSnackbar(context,
+                                        'Selfie is required for Time In');
+                                    setState(() {
+                                      _isTimeInLoading =
+                                          false; // Stop loading spinner
+                                    });
+                                    return;
+                                  }
 
-                                if (_selfie == null) {
-                                  _showSnackbar(context,
-                                      'Selfie is required for Time In');
+                                  // Step 2: Record Time In with selfie
+                                  await _confirmAndRecordTimeIn(context);
+
                                   setState(() {
                                     _isTimeInLoading =
                                         false; // Stop loading spinner
                                   });
-                                  return;
                                 }
-
-                                // Step 2: Record Time In with selfie
-                                await _confirmAndRecordTimeIn(context);
-
-                                setState(() {
-                                  _isTimeInLoading =
-                                      false; // Stop loading spinner
-                                });
-                              }
-                            : null,
-                        style: ButtonStyle(
-                          padding:
-                              MaterialStateProperty.all<EdgeInsetsGeometry>(
-                            const EdgeInsets.symmetric(vertical: 30),
-                          ),
-                          minimumSize: MaterialStateProperty.all<Size>(
-                            const Size(150, 50),
-                          ),
-                          backgroundColor:
-                              MaterialStateProperty.resolveWith<Color>(
-                            (states) {
-                              if (!attendanceModel.isTimeInRecorded) {
-                                return Colors.blue[900]!;
-                              } else {
-                                return Colors.grey;
-                              }
-                            },
-                          ),
-                        ),
-                        child: _isTimeInLoading
-                            ? CircularProgressIndicator(color: Colors.white)
-                            : const Text(
-                                "Time In",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                ),
-                              ),
-                      ),
-                      SizedBox(height: 15),
-                      if (attendanceModel.isTimeInRecorded &&
-                          _selectedAccount != null &&
-                          attendanceModel
-                                  .getSelfieUrlForBranch(_selectedAccount!) !=
-                              null)
-                        ElevatedButton(
-                          onPressed: () {
-                            _viewSelfie(context); // Function to view the selfie
-                          },
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 15, horizontal: 30),
-                            backgroundColor: Colors.blue[400],
-                          ),
-                          child: const Text(
-                            "View Picture",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
+                              : null,
+                          style: ButtonStyle(
+                            padding:
+                                MaterialStateProperty.all<EdgeInsetsGeometry>(
+                              const EdgeInsets.symmetric(vertical: 30),
+                            ),
+                            minimumSize: MaterialStateProperty.all<Size>(
+                              const Size(150, 50),
+                            ),
+                            backgroundColor:
+                                MaterialStateProperty.resolveWith<Color>(
+                              (states) {
+                                if (!attendanceModel.isTimeInRecorded) {
+                                  return Colors.blue[900]!;
+                                } else {
+                                  return Colors.grey;
+                                }
+                              },
                             ),
                           ),
+                          child: _isTimeInLoading
+                              ? CircularProgressIndicator(color: Colors.white)
+                              : const Text(
+                                  "Time In",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20,
+                                  ),
+                                ),
                         ),
-                      SizedBox(height: 35),
-                      Text(
-                        "Time In: ${_formatTime(attendanceModel.timeIn)}",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 15),
-                      ),
-                      Text(
-                        "Location: $timeInLocation",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 10),
-                      ),
-                    ],
-                  ),
-                ),
+                        SizedBox(height: 15),
+                        if (attendanceModel.isTimeInRecorded &&
+                            _selectedAccount != null &&
+                            attendanceModel
+                                    .getSelfieUrlForBranch(_selectedAccount!) !=
+                                null)
+                          ElevatedButton(
+                            onPressed: () {
+                              _viewSelfie(
+                                  context); // Function to view the selfie
+                            },
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 15, horizontal: 30),
+                              backgroundColor: Colors.blue[400],
+                            ),
+                            child: const Text(
+                              "View Picture",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ),
+                        SizedBox(height: 35),
 
-                SizedBox(height: 20),
+                        // ✅ Updated time format to match stored format
+                        Text(
+                          "Time In: ${_formatTime(attendanceModel.timeIn)}",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
 
-                // Time Out Container
-                Container(
-                  padding: EdgeInsets.all(15),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(35),
-                      topRight: Radius.circular(35),
-                      bottomLeft: Radius.circular(25),
-                      bottomRight: Radius.circular(25),
+                        // ✅ Location display
+                        Text(
+                          "Location: ${timeInLocation ?? 'No Location'}",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 10),
+                        ),
+                      ],
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.blue[900]!.withOpacity(0.8),
-                        blurRadius: 20,
-                        offset: Offset(0, 10),
-                      ),
-                    ],
                   ),
-                  child: Column(
-                    children: [
-                      Text(
-                        "TIME OUT",
-                        style: TextStyle(
-                            fontSize: 30, fontWeight: FontWeight.bold),
+
+                  SizedBox(height: 30),
+
+                  // Time Out Container
+                  Container(
+                    padding: EdgeInsets.all(15),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(35),
+                        topRight: Radius.circular(35),
+                        bottomLeft: Radius.circular(25),
+                        bottomRight: Radius.circular(25),
                       ),
-                      SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: attendanceModel.isTimeInRecorded &&
-                                !attendanceModel.isTimeOutRecorded &&
-                                !_isTimeOutLoading
-                            ? () async {
-                                setState(() {
-                                  _isTimeOutLoading =
-                                      true; // Show loading spinner
-                                });
-
-                                // Step 1: Capture a selfie
-                                await _pickTimeOutSelfie();
-
-                                if (_timeOutSelfie == null) {
-                                  _showSnackbar(context,
-                                      'Selfie is required for Time Out');
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blue[900]!.withOpacity(0.8),
+                          blurRadius: 20,
+                          offset: Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          "TIME OUT",
+                          style: TextStyle(
+                              fontSize: 30, fontWeight: FontWeight.bold),
+                        ),
+                        SizedBox(height: 20),
+                        ElevatedButton(
+                          onPressed: attendanceModel.isTimeInRecorded &&
+                                  !attendanceModel.isTimeOutRecorded &&
+                                  !_isTimeOutLoading
+                              ? () async {
                                   setState(() {
+                                    _isTimeOutLoading =
+                                        true; // Show loading spinner
+                                  });
+
+                                  // Step 1: Capture a selfie
+                                  await _pickTimeOutSelfie();
+
+                                  if (_timeOutSelfie == null) {
+                                    _showSnackbar(context,
+                                        'Selfie is required for Time Out');
+                                    setState(() {
+                                      _isTimeOutLoading =
+                                          false; // Stop loading spinner
+                                    });
+                                    return;
+                                  }
+
+                                  // Step 2: Record Time Out with selfie URL
+                                  await _confirmAndRecordTimeOut(context);
+
+                                  // ✅ Step 3: Update AttendanceModel immediately
+                                  final updatedTimeOutSelfieUrl =
+                                      attendanceModel
+                                          .getTimeOutSelfieUrlForBranch(
+                                              _selectedAccount!);
+
+                                  setState(() {
+                                    attendanceModel
+                                        .setTimeOutSelfieUrlForBranch(
+                                      _selectedAccount!,
+                                      updatedTimeOutSelfieUrl ??
+                                          '', // ✅ Fallback to an empty string if null
+                                    );
                                     _isTimeOutLoading =
                                         false; // Stop loading spinner
                                   });
-                                  return;
                                 }
-
-                                // Step 2: Record Time Out with selfie URL
-                                await _confirmAndRecordTimeOut(context);
-
-                                // ✅ Step 3: Update AttendanceModel immediately
-                                final updatedTimeOutSelfieUrl = attendanceModel
-                                    .getTimeOutSelfieUrlForBranch(
-                                        _selectedAccount!);
-
-                                setState(() {
-                                  attendanceModel.setTimeOutSelfieUrlForBranch(
-                                    _selectedAccount!,
-                                    updatedTimeOutSelfieUrl ??
-                                        '', // ✅ Fallback to an empty string if null
-                                  );
-                                  _isTimeOutLoading =
-                                      false; // Stop loading spinner
-                                });
+                              : null,
+                          style: ButtonStyle(
+                            padding:
+                                MaterialStateProperty.all<EdgeInsetsGeometry>(
+                              const EdgeInsets.symmetric(vertical: 30),
+                            ),
+                            minimumSize: MaterialStateProperty.all<Size>(
+                                const Size(150, 50)),
+                            backgroundColor:
+                                MaterialStateProperty.resolveWith<Color>(
+                                    (states) {
+                              if (attendanceModel.isTimeInRecorded &&
+                                  !attendanceModel.isTimeOutRecorded) {
+                                return Colors.red; // Time Out button active
+                              } else {
+                                return Colors.grey; // Time Out button inactive
                               }
-                            : null,
-                        style: ButtonStyle(
-                          padding:
-                              MaterialStateProperty.all<EdgeInsetsGeometry>(
-                            const EdgeInsets.symmetric(vertical: 30),
+                            }),
                           ),
-                          minimumSize: MaterialStateProperty.all<Size>(
-                              const Size(150, 50)),
-                          backgroundColor:
-                              MaterialStateProperty.resolveWith<Color>(
-                                  (states) {
-                            if (attendanceModel.isTimeInRecorded &&
-                                !attendanceModel.isTimeOutRecorded) {
-                              return Colors.red; // Time Out button active
-                            } else {
-                              return Colors.grey; // Time Out button inactive
-                            }
-                          }),
-                        ),
-                        child: _isTimeOutLoading
-                            ? CircularProgressIndicator(color: Colors.white)
-                            : const Text(
-                                "Time Out",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
+                          child: _isTimeOutLoading
+                              ? CircularProgressIndicator(color: Colors.white)
+                              : const Text(
+                                  "Time Out",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 20,
+                                  ),
                                 ),
-                              ),
-                      ),
-                      SizedBox(height: 15),
+                        ),
+                        SizedBox(height: 15),
 
-                      // ✅ View Picture Button (Updated Condition)
-                      if (attendanceModel.isTimeOutRecorded &&
-                          _selectedAccount != null &&
-                          (attendanceModel.getTimeOutSelfieUrlForBranch(
-                                      _selectedAccount!) !=
-                                  null &&
-                              attendanceModel
-                                  .getTimeOutSelfieUrlForBranch(
-                                      _selectedAccount!)!
-                                  .isNotEmpty)) // Ensure it's not empty
-                        ElevatedButton(
-                          onPressed: () {
-                            _viewTimeOutSelfie(
-                                context); // Function to view the selfie
-                          },
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 15, horizontal: 30),
-                            backgroundColor: Colors.blue[400],
-                          ),
-                          child: const Text(
-                            "View Picture",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
+                        // ✅ View Picture Button (Updated Condition)
+                        if (attendanceModel.isTimeOutRecorded &&
+                            _selectedAccount != null &&
+                            (attendanceModel.getTimeOutSelfieUrlForBranch(
+                                        _selectedAccount!) !=
+                                    null &&
+                                attendanceModel
+                                    .getTimeOutSelfieUrlForBranch(
+                                        _selectedAccount!)!
+                                    .isNotEmpty)) // Ensure it's not empty
+                          ElevatedButton(
+                            onPressed: () {
+                              _viewTimeOutSelfie(
+                                  context); // Function to view the selfie
+                            },
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 15, horizontal: 30),
+                              backgroundColor: Colors.blue[400],
+                            ),
+                            child: const Text(
+                              "View Picture",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
                             ),
                           ),
+                        SizedBox(height: 15),
+
+                        // ✅ Display Time Out and Location
+                        Text(
+                          "Time Out: ${_formatTime(attendanceModel.timeOut)}",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 15),
                         ),
-                      SizedBox(height: 15),
-
-                      // ✅ Display Time Out and Location
-                      Text(
-                        "Time Out: ${_formatTime(attendanceModel.timeOut)}",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 15),
-                      ),
-                      Text(
-                        "Location: $timeOutLocation",
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 10),
-                      ),
-                    ],
+                        Text(
+                          "Location: $timeOutLocation",
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 10),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                SizedBox(height: 20),
+                  SizedBox(height: 40),
 
-                if (attendanceModel.timeIn == null ||
-                    _formatTime(attendanceModel.timeIn) == null)
-                  Text(
-                    'No attendance recorded for this branch.',
-                    style: TextStyle(
-                        color: Colors.red, fontWeight: FontWeight.bold),
-                  ),
-              ],
+                  if (attendanceModel.timeIn == null ||
+                      _formatTime(attendanceModel.timeIn) == null)
+                    Text(
+                      'No attendance recorded for this branch.',
+                      style: TextStyle(
+                          color: Colors.red, fontWeight: FontWeight.bold),
+                    ),
+                ],
+              ),
             ),
           );
         },
