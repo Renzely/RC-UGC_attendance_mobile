@@ -49,7 +49,7 @@ class _SignUpState extends State<SignUp> {
 
   @override
   Widget build(BuildContext context) {
-    List<String> remarksChoices = ['RC', 'UGC'];
+    List<String> remarksChoices = ['RC SALES AGENT', 'UGC PERSONNEL'];
     return new WillPopScope(
         onWillPop: () async => false,
         child: new Scaffold(
