@@ -231,13 +231,13 @@ class _LoginPageState extends State<LoginPage> {
                     children: <Widget>[
                       Text(
                         "Login",
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.inter(
                             color: Colors.white, fontSize: 40),
                       ),
                       SizedBox(height: 10),
                       Text(
                         "Welcome to BMP ATTENDANCE",
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.inter(
                             color: Colors.white, fontSize: 18),
                       ),
                     ],
@@ -279,7 +279,7 @@ class _LoginPageState extends State<LoginPage> {
                                 children: [
                                   Text(
                                     'USERNAME',
-                                    style: GoogleFonts.roboto(
+                                    style: GoogleFonts.inter(
                                       color: Colors.blue[900],
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -311,7 +311,7 @@ class _LoginPageState extends State<LoginPage> {
                                 children: [
                                   Text(
                                     'PASSWORD',
-                                    style: GoogleFonts.roboto(
+                                    style: GoogleFonts.inter(
                                       color: Colors.blue[900],
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -378,8 +378,10 @@ class _LoginPageState extends State<LoginPage> {
                                           .white) // Show spinner if loading
                                   : Text(
                                       'LOGIN',
-                                      style: TextStyle(
-                                          color: Colors.white, fontSize: 18),
+                                      style: GoogleFonts.inter(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                      ),
                                     ),
                             ),
                           ),
@@ -410,10 +412,10 @@ class _LoginPageState extends State<LoginPage> {
                             child: Center(
                               child: Text(
                                 'SIGN UP',
-                                style: GoogleFonts.roboto(
-                                  color: Colors.white, // Text color
-                                  fontWeight: FontWeight.bold,
+                                style: GoogleFonts.inter(
+                                  color: Colors.white,
                                   fontSize: 12,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
@@ -445,10 +447,10 @@ class _LoginPageState extends State<LoginPage> {
                             child: Center(
                               child: Text(
                                 'FORGOT PASSWORD',
-                                style: GoogleFonts.roboto(
-                                  color: Colors.white, // Text color
-                                  fontWeight: FontWeight.bold,
+                                style: GoogleFonts.inter(
+                                  color: Colors.white,
                                   fontSize: 12,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),

@@ -77,7 +77,7 @@ class _SignUpState extends State<SignUp> {
                     const SizedBox(height: 20),
                     Text(
                       'SIGN UP',
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.inter(
                         color: Colors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -402,7 +402,7 @@ class _SignUpState extends State<SignUp> {
                             )
                           : Text(
                               'SUBMIT',
-                              style: GoogleFonts.roboto(
+                              style: GoogleFonts.inter(
                                 color: Colors.blue,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -413,7 +413,7 @@ class _SignUpState extends State<SignUp> {
                     const SizedBox(height: 15),
                     Text(
                       "Already have an account? ",
-                      style: GoogleFonts.roboto(color: Colors.white),
+                      style: GoogleFonts.inter(color: Colors.white),
                     ),
                     const SizedBox(height: 15),
                     GestureDetector(
@@ -427,7 +427,7 @@ class _SignUpState extends State<SignUp> {
                       },
                       child: Text(
                         'LOG IN',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.inter(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                             fontSize: 20),

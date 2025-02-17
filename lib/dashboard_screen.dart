@@ -1,7 +1,7 @@
 // ignore_for_file: must_be_immutable, prefer_const_constructors, use_key_in_widget_constructors, prefer_const_constructors_in_immutables, library_private_types_in_public_api, unnecessary_string_interpolations, sort_child_properties_last, avoid_print, use_rethrow_when_possible, depend_on_referenced_packages
 import 'dart:convert';
 import 'dart:io';
-
+import 'package:google_fonts/google_fonts.dart';
 import 'package:demo_app/editInventory_screen.dart';
 import 'package:demo_app/editRTV_screen.dart';
 import 'package:demo_app/inventoryAdd_screen.dart';
@@ -840,7 +840,10 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
             children: [
               Text(
                 "Your Time In Picture",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                style: GoogleFonts.inter(
+                  color: Colors.black,
+                  fontSize: 20,
+                ),
               ),
               SizedBox(height: 15),
               selfieUrl != null
@@ -863,12 +866,18 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
               // ✅ Display the correct stored time
               Text(
                 "Time In: ${_formatTime(timeIn)}", // ✅ Now it correctly formats the stored time
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                style: GoogleFonts.inter(
+                    color: Colors.black,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold),
               ),
 
               Text(
                 "Location: $location",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
+                style: GoogleFonts.inter(
+                  color: Colors.black,
+                  fontSize: 9,
+                ),
               ),
             ],
           ),
@@ -936,12 +945,18 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
               // ✅ Display the correct stored time
               Text(
                 "Time Out: ${_formatTime(timeOut)}", // ✅ Uses the recorded time
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                style: GoogleFonts.inter(
+                    color: Colors.black,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold),
               ),
 
               Text(
                 "Location: $timeOutlocation",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
+                style: GoogleFonts.inter(
+                  color: Colors.black,
+                  fontSize: 9,
+                ),
               ),
             ],
           ),
@@ -1023,8 +1038,12 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
                       }
                       return null;
                     },
-                    disabledHint: Text(_selectedAccount ?? 'Select Branch',
-                        style: TextStyle(color: Colors.grey)),
+                    disabledHint: Text(
+                      _selectedAccount ?? 'Select Branch',
+                      style: GoogleFonts.inter(
+                        color: Colors.black,
+                      ),
+                    ),
                   ),
                   SizedBox(height: 20),
 
@@ -2561,7 +2580,7 @@ class Setting extends StatelessWidget {
     return new WillPopScope(
         onWillPop: () async => false,
         child: new SideBarLayout(
-          title: "Settings",
+          title: "SETTINGS",
           mainContent: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.symmetric(
@@ -2572,25 +2591,43 @@ class Setting extends StatelessWidget {
                   SizedBox(height: 20),
                   Text(
                     'First Name: ',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.black),
+                    style: GoogleFonts.inter(
+                      color: Colors.black,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   TextFormField(
                     readOnly: true,
-                    initialValue: userName,
+                    initialValue: userName.isNotEmpty
+                        ? userName[0].toUpperCase() + userName.substring(1)
+                        : userName,
+                    style: GoogleFonts.inter(
+                      color: Colors.black,
+                    ),
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
                     ),
                   ),
+
                   SizedBox(height: 20),
                   Text(
                     'Middle Name: ',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.black),
+                    style: GoogleFonts.inter(
+                      color: Colors.black,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   TextFormField(
                     readOnly: true,
-                    initialValue: userMiddleName,
+                    initialValue: userMiddleName.isNotEmpty
+                        ? userMiddleName[0].toUpperCase() +
+                            userMiddleName.substring(1)
+                        : userMiddleName,
+                    style: GoogleFonts.inter(
+                      color: Colors.black,
+                    ),
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
                     ),
@@ -2598,12 +2635,21 @@ class Setting extends StatelessWidget {
                   SizedBox(height: 20),
                   Text(
                     'Last Name: ',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.black),
+                    style: GoogleFonts.inter(
+                      color: Colors.black,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   TextFormField(
                     readOnly: true,
-                    initialValue: userLastName,
+                    initialValue: userLastName.isNotEmpty
+                        ? userLastName[0].toUpperCase() +
+                            userLastName.substring(1)
+                        : userLastName,
+                    style: GoogleFonts.inter(
+                      color: Colors.black,
+                    ),
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
                     ),
@@ -2611,12 +2657,18 @@ class Setting extends StatelessWidget {
                   SizedBox(height: 20),
                   Text(
                     'Contact Number: ',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.black),
+                    style: GoogleFonts.inter(
+                      color: Colors.black,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   TextFormField(
                     readOnly: true,
                     initialValue: userContactNum,
+                    style: GoogleFonts.inter(
+                      color: Colors.black,
+                    ),
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
                     ),
@@ -2624,12 +2676,18 @@ class Setting extends StatelessWidget {
                   SizedBox(height: 20),
                   Text(
                     'Email Address: ',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.black),
+                    style: GoogleFonts.inter(
+                      color: Colors.black,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   TextFormField(
                     initialValue: userEmail,
                     readOnly: true,
+                    style: GoogleFonts.inter(
+                      color: Colors.black,
+                    ),
                     decoration: InputDecoration(
                       border: OutlineInputBorder(),
                     ),
@@ -2653,7 +2711,7 @@ class Setting extends StatelessWidget {
                         ),
                         child: Text(
                           'LOG OUT',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
@@ -2842,6 +2900,11 @@ class _SideBarLayoutState extends State<SideBarLayout> {
     }
   }
 
+  String capitalize(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1).toLowerCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     return new WillPopScope(
@@ -2887,15 +2950,7 @@ class _SideBarLayoutState extends State<SideBarLayout> {
                 child: ListView(
                   padding: EdgeInsets.zero,
                   children: [
-                    UserAccountsDrawerHeader(
-                      accountName: Text(
-                        '${widget.userName} ${widget.userLastName}',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      accountEmail: Text(
-                        widget.userEmail,
-                        style: TextStyle(color: Colors.white),
-                      ),
+                    Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
@@ -2906,7 +2961,40 @@ class _SideBarLayoutState extends State<SideBarLayout> {
                           ],
                         ),
                       ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment
+                            .center, // Centers everything vertically
+                        crossAxisAlignment: CrossAxisAlignment
+                            .center, // Centers everything horizontally
+                        children: [
+                          SizedBox(height: 60), // Add spacing at the top
+                          CircleAvatar(
+                            backgroundColor: Colors.white,
+                            radius: 30, // Adjust size if needed
+                            child: Icon(
+                              Icons.person,
+                              size: 40.0, // Adjust size as needed
+                              color: Colors.blue[900],
+                            ),
+                          ),
+                          SizedBox(
+                              height: 10), // Spacing between avatar and name
+                          Text(
+                            '${capitalize(widget.userName)} ${capitalize(widget.userLastName)}',
+                            style: TextStyle(color: Colors.white, fontSize: 18),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 5), // Small spacing
+                          Text(
+                            widget.userEmail,
+                            style: TextStyle(color: Colors.white, fontSize: 14),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 20), // Add spacing at the bottom
+                        ],
+                      ),
                     ),
+
                     ListTile(
                       leading: const Icon(
                         Icons.account_circle_outlined,
@@ -3030,19 +3118,15 @@ class _DateTimeWidgetState extends State<DateTimeWidget> {
         children: [
           Text(
             formattedTime,
-            style: TextStyle(
-              fontSize: 60,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
+            style: GoogleFonts.inter(
+                color: Colors.black, fontSize: 60, fontWeight: FontWeight.bold),
           ),
           // SizedBox(height: 20),
           Text(
             '$formattedDate, $dayOfWeek',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.normal,
+            style: GoogleFonts.inter(
               color: Colors.black,
+              fontSize: 20,
             ),
           ),
         ],

@@ -90,7 +90,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     children: <Widget>[
                       Text(
                         "Forgot Password",
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.inter(
                           color: Colors.white,
                           fontSize: 40,
                         ),
@@ -98,7 +98,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                       SizedBox(height: 10),
                       Text(
                         "Recover your account",
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.inter(
                           color: Colors.white,
                           fontSize: 18,
                         ),
@@ -136,7 +136,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                             SizedBox(height: 10),
                             Text(
                               otpMessage!,
-                              style: TextStyle(color: Colors.green),
+                              style: TextStyle(color: Colors.blue),
                             ),
                           ],
                           SizedBox(height: 20),
@@ -220,7 +220,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                                 child: Center(
                                   child: Text(
                                     "Verify OTP",
-                                    style: GoogleFonts.roboto(
+                                    style: GoogleFonts.inter(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -241,7 +241,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                             },
                             child: Text(
                               'LOG IN',
-                              style: GoogleFonts.roboto(
+                              style: GoogleFonts.inter(
                                   color: Colors.blue[400],
                                   fontWeight: FontWeight.bold,
                                   fontSize: 20),
