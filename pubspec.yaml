@@ -34,7 +34,6 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.1
   flutter_native_splash: ^2.4.4
 
-
 flutter:
   uses-material-design: true
   generate: true
@@ -42,6 +41,13 @@ flutter:
     - assets/images/Studio-Project-nobg.png
     # - assets/images/2x2_YNSON.png
     - assets/images/bmp.png
+
+fonts:
+  - family: Inter
+    fonts:
+      - asset: fonts/Inter-Regular.ttf
+      - asset: fonts/Inter-Bold.ttf
+        weight: 700
 
 flutter_launcher_icons:
   android: "launcher_icon"
@@ -51,6 +57,6 @@ flutter_launcher_icons:
   remove_alpha_ios: true
 
 flutter_native_splash:
-    image: "assets/images/bmp.png"
-    color: "42a5f5"
-    android: true
+  image: "assets/images/bmp.png"
+  color: "42a5f5"
+  android: true

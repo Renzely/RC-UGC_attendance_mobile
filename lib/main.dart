@@ -55,7 +55,7 @@ class MyApp extends StatelessWidget {
       create: (_) => AttendanceModel(), // Provide AttendanceModel here
       child: MaterialApp(
         theme: ThemeData(
-          textTheme: GoogleFonts.robotoTextTheme(
+          textTheme: GoogleFonts.interTextTheme(
             Theme.of(context).textTheme,
           ),
         ),

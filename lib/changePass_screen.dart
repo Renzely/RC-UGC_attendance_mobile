@@ -36,8 +36,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     return null;
   }
 
-  
-
   void _changePassword() async {
     String newPassword = newPasswordController.text.trim();
     String confirmPassword = confirmPasswordController.text.trim();
@@ -78,7 +76,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to change password. Please try again.')),
+            SnackBar(
+                content: Text('Failed to change password. Please try again.')),
           );
         }
       } catch (e) {
@@ -128,7 +127,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   prefixIcon: Icon(Icons.lock),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _showNewPassword ? Icons.visibility : Icons.visibility_off,
+                      _showNewPassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                     ),
                     onPressed: () {
                       setState(() {
@@ -148,7 +149,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   prefixIcon: Icon(Icons.lock),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _showConfirmPassword ? Icons.visibility : Icons.visibility_off,
+                      _showConfirmPassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                     ),
                     onPressed: () {
                       setState(() {
@@ -178,7 +181,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   child: Center(
                     child: Text(
                       "Change",
-                      style: GoogleFonts.roboto(
+                      style: GoogleFonts.inter(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
@@ -196,7 +199,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 },
                 child: Text(
                   'Back',
-                  style: GoogleFonts.roboto(
+                  style: GoogleFonts.inter(
                     color: Colors.blue[400],
                     fontWeight: FontWeight.bold,
                   ),
