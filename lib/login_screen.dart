@@ -230,7 +230,7 @@ class _LoginPageState extends State<LoginPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Text(
-                        "Login",
+                        "LOGIN",
                         style: GoogleFonts.inter(
                             color: Colors.white, fontSize: 40),
                       ),
