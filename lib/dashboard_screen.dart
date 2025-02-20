@@ -2560,6 +2560,341 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
 //   }
 // }
 
+class historyattendance extends StatefulWidget {
+  final String userName;
+  final String userLastName;
+  final String userEmail;
+  final String userMiddleName;
+  final String userContactNum;
+
+  historyattendance({
+    required this.userName,
+    required this.userLastName,
+    required this.userEmail,
+    required this.userMiddleName,
+    required this.userContactNum,
+  });
+
+  @override
+  _HistoryAttendanceState createState() => _HistoryAttendanceState();
+}
+
+class _HistoryAttendanceState extends State<historyattendance> {
+  List<Map<String, dynamic>> attendanceRecords = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchAttendance();
+  }
+
+// Format time into AM/PM format
+  String _formatTime(String? time) {
+    if (time == null || time.isEmpty) return "No record";
+
+    try {
+      // Convert from ISO 8601 format to DateTime
+      DateTime parsedTime = DateTime.parse(time);
+      return DateFormat("hh:mm a")
+          .format(parsedTime); // Converts to AM/PM format
+    } catch (e) {
+      return "Invalid time";
+    }
+  }
+
+// Format date into a more readable format (e.g., 18-Feb-2025)
+  String _formatDate(String? date) {
+    if (date == null || date.isEmpty) return "No date";
+
+    try {
+      // Convert from ISO 8601 format to DateTime
+      DateTime parsedDate = DateTime.parse(date);
+      return DateFormat("dd MMM yyyy")
+          .format(parsedDate); // Converts to "dd MMM yyyy"
+    } catch (e) {
+      return "Invalid date";
+    }
+  }
+
+  Future<void> fetchAttendance() async {
+    final url = Uri.parse(
+        'https://rc-ugc-attendance-backend.onrender.com/get-attendance');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"userEmail": widget.userEmail}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        if (data["success"] == true && data["data"] is List) {
+          setState(() {
+            attendanceRecords = List<Map<String, dynamic>>.from(data["data"]);
+            isLoading = false;
+          });
+        } else {
+          print("No attendance records found.");
+          setState(() {
+            isLoading = false;
+          });
+        }
+      } else {
+        print("Failed to fetch attendance data: ${response.statusCode}");
+        setState(() {
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("Error fetching attendance: $e");
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Sort the attendance records by date in descending order
+    attendanceRecords.sort((a, b) {
+      DateTime dateA = DateTime.parse(a["date"]);
+      DateTime dateB = DateTime.parse(b["date"]);
+      return dateB.compareTo(dateA); // Descending order
+    });
+
+    return WillPopScope(
+      onWillPop: () async => false,
+      child: SideBarLayout(
+        title: "ATTENDANCE HISTORY",
+        mainContent: isLoading
+            ? Center(child: CircularProgressIndicator()) // Show loader
+            : SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 20),
+                      attendanceRecords.isEmpty
+                          ? Center(child: Text("No attendance records found."))
+                          : ListView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount: attendanceRecords.length,
+                              itemBuilder: (context, index) {
+                                final record = attendanceRecords[index];
+
+                                return Card(
+                                  elevation: 3,
+                                  margin: EdgeInsets.symmetric(vertical: 8),
+                                  child: ExpansionTile(
+                                    leading: Icon(Icons.calendar_today,
+                                        color: Colors.blue),
+                                    title: Text(
+                                      "Date: ${_formatDate(record["date"])}", // Format the date
+                                      style: GoogleFonts.inter(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize:
+                                            16, // You can adjust the size as needed
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      "Branch: ${record["accountNameBranchManning"] ?? 'N/A'}",
+                                      style: GoogleFonts.inter(),
+                                    ),
+                                    children:
+                                        record["timeLogs"].map<Widget>((log) {
+                                      return Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              "Date: ${_formatDate(record["date"])}", // Use formatted date
+                                              style: GoogleFonts.inter(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            SizedBox(height: 10),
+                                            RichText(
+                                              text: TextSpan(
+                                                style: GoogleFonts.inter(
+                                                    fontSize: 14,
+                                                    color: Colors.black),
+                                                children: [
+                                                  TextSpan(
+                                                    text: "Time In: ",
+                                                    style: TextStyle(
+                                                        fontWeight: FontWeight
+                                                            .bold), // Make only the title bold
+                                                  ),
+                                                  TextSpan(
+                                                    text: _formatTime(log[
+                                                        "timeIn"]), // Keep the value normal
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+
+                                            SizedBox(height: 10),
+                                            RichText(
+                                              text: TextSpan(
+                                                style: GoogleFonts.inter(
+                                                    fontSize: 14,
+                                                    color: Colors.black),
+                                                children: [
+                                                  TextSpan(
+                                                    text: "Time In Location: ",
+                                                    style: TextStyle(
+                                                        fontWeight: FontWeight
+                                                            .bold), // Bold title
+                                                  ),
+                                                  TextSpan(
+                                                    text:
+                                                        log["timeInLocation"] ??
+                                                            "", // Normal value
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+
+                                            SizedBox(height: 5),
+                                            log["selfieUrl"] != null &&
+                                                    log["selfieUrl"].isNotEmpty
+                                                ? Center(
+                                                    child: Container(
+                                                      decoration: BoxDecoration(
+                                                        border: Border.all(
+                                                            color: Colors.black,
+                                                            width:
+                                                                2), // Add border
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                                8), // Optional: rounded corners
+                                                      ),
+                                                      child: ClipRRect(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                                8), // Match border radius
+                                                        child: Image.network(
+                                                          log["selfieUrl"],
+                                                          height: 100,
+                                                          width: 100,
+                                                          fit: BoxFit.cover,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  )
+                                                : Center(
+                                                    child: Text(
+                                                        "No Time-In Selfie"),
+                                                  ),
+
+                                            SizedBox(
+                                                height:
+                                                    10), // Space between Time In & Time Out
+
+                                            RichText(
+                                              text: TextSpan(
+                                                style: GoogleFonts.inter(
+                                                    fontSize: 14,
+                                                    color: Colors.black),
+                                                children: [
+                                                  TextSpan(
+                                                    text: "Time Out: ",
+                                                    style: TextStyle(
+                                                        fontWeight: FontWeight
+                                                            .bold), // Bold title
+                                                  ),
+                                                  TextSpan(
+                                                    text: _formatTime(log[
+                                                        "timeOut"]), // Normal value
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+
+                                            SizedBox(height: 10),
+
+                                            RichText(
+                                              text: TextSpan(
+                                                style: GoogleFonts.inter(
+                                                    fontSize: 14,
+                                                    color: Colors.black),
+                                                children: [
+                                                  TextSpan(
+                                                    text: "Time Out Location: ",
+                                                    style: TextStyle(
+                                                        fontWeight: FontWeight
+                                                            .bold), // Bold title
+                                                  ),
+                                                  TextSpan(
+                                                    text:
+                                                        log["timeOutLocation"] ??
+                                                            "", // Normal value
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            SizedBox(height: 10),
+                                            log["timeOutSelfieUrl"] != null &&
+                                                    log["timeOutSelfieUrl"]
+                                                        .isNotEmpty
+                                                ? Center(
+                                                    child: Container(
+                                                      decoration: BoxDecoration(
+                                                        border: Border.all(
+                                                            color: Colors.black,
+                                                            width:
+                                                                2), // Add border
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                                8), // Optional: rounded corners
+                                                      ),
+                                                      child: ClipRRect(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                                8), // Match border radius if needed
+                                                        child: Image.network(
+                                                          log["timeOutSelfieUrl"],
+                                                          height: 100,
+                                                          width: 100,
+                                                          fit: BoxFit.cover,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  )
+                                                : Center(
+                                                    child: Text(
+                                                        "No Time-Out Selfie"),
+                                                  ),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                );
+                              },
+                            ),
+                    ],
+                  ),
+                ),
+              ),
+        userName: widget.userName,
+        userLastName: widget.userLastName,
+        userEmail: widget.userEmail,
+        userContactNum: widget.userContactNum,
+        userMiddleName: widget.userMiddleName,
+      ),
+    );
+  }
+}
+
 class Setting extends StatelessWidget {
   final String userName;
   final String userLastName;
@@ -3014,22 +3349,25 @@ class _SideBarLayoutState extends State<SideBarLayout> {
                         );
                       },
                     ),
-                    // ListTile(
-                    //   leading: const Icon(Icons.inventory_2_outlined),
-                    //   title: const Text('Inventory'),
-                    //   onTap: () {
-                    //     Navigator.of(context).push(
-                    //       MaterialPageRoute(
-                    //           builder: (context) => Inventory(
-                    //                 userName: widget.userName,
-                    //                 userLastName: widget.userLastName,
-                    //                 userEmail: widget.userEmail,
-                    //                 userContactNum: widget.userContactNum,
-                    //                 userMiddleName: widget.userMiddleName,
-                    //               )),
-                    //     );
-                    //   },
-                    // ),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.history_sharp,
+                        color: Colors.blue,
+                      ),
+                      title: const Text('History Attendance'),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (context) => historyattendance(
+                                    userName: widget.userName,
+                                    userLastName: widget.userLastName,
+                                    userEmail: widget.userEmail,
+                                    userContactNum: widget.userContactNum,
+                                    userMiddleName: widget.userMiddleName,
+                                  )),
+                        );
+                      },
+                    ),
                     // ListTile(
                     //   leading: const Icon(Icons.assignment_return_outlined),
                     //   title: const Text('Return To Vendor'),

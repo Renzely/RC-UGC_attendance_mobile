@@ -483,7 +483,7 @@ class _SignUpState extends State<SignUp> {
         'Content-Type': 'application/json; charset=UTF-8',
       },
       body: jsonEncode(<String, String>{
-        'emailAddress': email,
+        'email': email,
       }),
     );
 
