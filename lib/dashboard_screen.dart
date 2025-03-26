@@ -600,8 +600,7 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
 
       // ✅ Request a pre-signed URL from the backend
       final response = await http.post(
-        Uri.parse(
-            'https://rc-ugc-attendance-backend.onrender.com/save-attendance-images'),
+        Uri.parse('https://rc-and-ugc.onrender.com/save-attendance-images'),
         body: jsonEncode({'fileName': fileName}),
         headers: {'Content-Type': 'application/json'},
       );
@@ -735,8 +734,7 @@ class _AttendanceWidgetState extends State<AttendanceWidget> {
       File compressedImage = await _compressImage(_timeOutSelfie!);
 
       final response = await http.post(
-        Uri.parse(
-            'https://rc-ugc-attendance-backend.onrender.com/save-attendance-images'),
+        Uri.parse('https://rc-and-ugc.onrender.com/save-attendance-images'),
         body: jsonEncode({'fileName': fileName}),
         headers: {'Content-Type': 'application/json'},
       );
@@ -2618,8 +2616,7 @@ class _HistoryAttendanceState extends State<historyattendance> {
   }
 
   Future<void> fetchAttendance() async {
-    final url = Uri.parse(
-        'https://rc-ugc-attendance-backend.onrender.com/get-attendance');
+    final url = Uri.parse('https://rc-and-ugc.onrender.com/get-attendance');
 
     try {
       final response = await http.post(
